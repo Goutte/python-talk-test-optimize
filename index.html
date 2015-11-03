@@ -4,10 +4,10 @@
 	<head>
 		<meta charset="utf-8">
 
-		<title>reveal.js - The HTML Presentation Framework</title>
+		<title>Python Ktaf&eacute; &mdash; How to test and optimize your python</title>
 
-		<meta name="description" content="A framework for easily creating beautiful presentations using HTML">
-		<meta name="author" content="Hakim El Hattab">
+		<meta name="description" content="A small talk given at the IRAP about how to test and optimize python code">
+		<meta name="author" content="Antoine Goutenoir">
 
 		<meta name="apple-mobile-web-app-capable" content="yes" />
 		<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -40,20 +40,198 @@
 
 			<!-- Any section element inside of this container is displayed as a slide -->
 			<div class="slides">
+
 				<section>
-					<h1>Reveal.js</h1>
-					<h3>The HTML Presentation Framework</h3>
+					<h1>Python Ktaf&eacute;</h1>
+					<h3>How to test and optimize your python</h3>
 					<p>
-						<small>Created by <a href="http://hakim.se">Hakim El Hattab</a> / <a href="http://twitter.com/hakimel">@hakimel</a></small>
+						<small>Created by <a href="http://antoine.goutenoir.com">Antoine Goutenoir</a> / <a href="http://github.com/Goutte">@Goutte</a></small>
 					</p>
 				</section>
 
-				<section>
-					<h2>Hello There</h2>
-					<p>
-						reveal.js enables you to create beautiful interactive slide decks using HTML. This presentation will show you examples of what it can do.
-					</p>
+				<section data-transition="convex">
+
+          <section>
+            <h2>1. It's a mindset</h2>
+            <p>
+              The human brain did <em>not</em> evolve to produce code.
+            </p>
+            <img src="img/code-monkey.png" alt="Code Monkey" />
+          </section>
+
+          <section>
+            <h3>Guess how this works</h3>
+
+            <pre><code>
+def check_suite(a, b, c):
+    """
+    Checks something about a, b, and c.
+    Returns a boolean.
+    """
+            </code></pre>
+          </section>
+
+          <section>
+            <h3>Here's your initial data</h3>
+
+            <pre><code>
+assert check_suite(1, 2, 3)
+assert check_suite(17, 20, 23)
+            </code></pre>
+          </section>
+
+          <section data-background="#422">
+            <h3>It's NOT an arithmetic suite !</h3>
+
+            <p>
+              About 80% of people don't get this right.
+              <br/>
+              <small>
+                (and I made it a bit harder, because you're scientists.)
+              </small>
+            </p>
+          </section>
+
+          <section>
+            <h3>What it really does</h3>
+
+            <pre><code>
+def check_suite(a, b, c):
+    """
+    Checks whether `||a|| < ||b|| < ||c||`.
+    Supports complex numbers.
+    """
+    return abs(a) < abs(b) and abs(b) < abs(c)
+            </code></pre>
+          </section>
+
+          <section>
+            <h3>Positive Bias</h3>
+
+            <ul>
+              <li>
+                <a href="https://en.wikipedia.org/wiki/Confirmation_bias">Wikipedia</a>
+              </li>
+              <li>
+                <a href="http://www.tandfonline.com/doi/abs/10.1080/17470216008416717">Wason, Peter C. (1960), "On the failure to eliminate hypotheses in a conceptual task"</a>
+              </li>
+            </ul>
+
+            <p class="fragment">
+              With that in mind...
+            </p>
+          </section>
+
 				</section>
+
+        <section data-transition="convex">
+
+          <section>
+            <h2>2. Test your code</h2>
+
+            <p>
+              You don't want your science to be full of bugs !
+            </p>
+
+            <img src="img/bug.png" alt="Bug" />
+
+          </section>
+
+          <section>
+            <h3>Use libraries</h3>
+
+            <p>
+              Don't reinvent the wheel.
+            </p>
+
+            <ul>
+              <li>
+                <a href="http://nose.readthedocs.org/en/latest/">nose</a>
+              </li>
+              <li>
+                <a href="https://docs.python.org/3/library/unittest.html">unittest</a>
+              </li>
+              <li>
+                <a href="https://docs.python.org/3/library/doctest.html">doctest</a>
+              </li>
+              <li>
+                <a href="http://pytest.org/latest/contents.html">pytest</a>
+              </li>
+            </ul>
+          </section>
+
+          <section>
+            <h3>unittest</h3>
+
+            <pre><code>
+import unittest
+
+class CheckSuiteTest(unitest.TestCase):
+    def test_check_suite():
+        self.assertTrue(check_suite(1, 2, 3))
+        self.assertTrue(check_suite(-1.5, -2, -7))
+        self.assertTrue(check_suite(0, 1j+1, 4j+4))
+        self.assertFalse(check_suite(0, 2, 1))
+        self.assertFalse(check_suite(-3, 0, 3))
+        # etc
+
+if __name__ == '__main__':
+    unittest.main()
+            </code></pre>
+          </section>
+
+          <section>
+            <p>
+              <code>unittest</code> provides useful assertions, such as
+              <code>assertEqual(a, b)</code>
+              <br/>
+              or
+              <br/>
+              <code>assertIn(needle, haystack)</code>
+            </p>
+          </section>
+
+          <section>
+            <h3>Handmade is better than nothing</h3>
+            <pre><code>
+if __name__ == '__main__':
+    print "Running the test-suite for `check_suite()`..."
+    assert check_suite(1, 2, 3)
+    assert not check_suite(7, 7, 7)
+    # etc
+    print "Success!"
+            </code></pre>
+          </section>
+
+          <section>
+            <h3><code>assert</code> everywhere !</h3>
+            <p>
+              Don't worry about performance, assertions can be skipped with the
+              <code>-O</code> option.
+            </p>
+            <pre><code>
+$ python -O check_suite.py
+            </code></pre>
+          </section>
+
+          <section>
+            <h4>Further readings</h4>
+            <ul>
+              <li>
+                <a href="http://www.jeffknupp.com/blog/2013/12/09/improve-your-python-understanding-unit-testing/">why unit testing ?</a>
+              </li>
+              <li>
+                <a href="http://cgoldberg.github.io/python-unittest-tutorial/">unittest tutorial</a>
+              </li>
+            </ul>
+          </section>
+
+        </section>
+
+
+
+
+
 
 				<!-- Example of nested vertical slides -->
 				<section>
