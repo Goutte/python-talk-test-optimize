@@ -14,6 +14,8 @@
 
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
 
+    <link rel="shortcut icon" href="favicon.ico"/>
+
 		<link rel="stylesheet" href="css/reveal.css">
 		<link rel="stylesheet" href="css/theme/black.css" id="theme">
 
@@ -37,16 +39,16 @@
 	<body>
 
 		<div class="reveal">
-
-			<!-- Any section element inside of this container is displayed as a slide -->
 			<div class="slides">
 
 				<section>
 					<h1>Python Ktaf&eacute;</h1>
 					<h3>How to test and optimize your python</h3>
 					<p>
-						<small>Created by <a href="http://antoine.goutenoir.com">Antoine Goutenoir</a> / <a href="http://github.com/Goutte">@Goutte</a></small>
+						<small>by <a href="http://antoine.goutenoir.com">Antoine Goutenoir</a> / <a href="http://github.com/Goutte">@Goutte</a></small>
 					</p>
+
+          <img src="img/goutte-a.png" alt="Goutte"/>
 				</section>
 
 				<section data-transition="convex">
@@ -80,14 +82,14 @@ assert check_suite(17, 20, 23)
             </code></pre>
           </section>
 
-          <section data-background="#422">
+          <section data-background="#422" data-background-transition="zoom">
             <h3>It's NOT an arithmetic suite !</h3>
 
             <p>
               About 80% of people don't get this right.
               <br/>
               <small>
-                (and I made it a bit harder, because you're scientists.)
+                (and I made it a bit harder, because you're scientists)
               </small>
             </p>
           </section>
@@ -124,6 +126,9 @@ def check_suite(a, b, c):
 
 				</section>
 
+
+        <!-- 2. TEST ---------------------------------------------------------->
+
         <section data-transition="convex">
 
           <section>
@@ -134,7 +139,6 @@ def check_suite(a, b, c):
             </p>
 
             <img src="img/bug.png" alt="Bug" />
-
           </section>
 
           <section>
@@ -181,14 +185,19 @@ if __name__ == '__main__':
           </section>
 
           <section>
-            <p>
-              <code>unittest</code> provides useful assertions, such as
-              <code>assertEqual(a, b)</code>
-              <br/>
-              or
-              <br/>
-              <code>assertIn(needle, haystack)</code>
-            </p>
+            <h3>Specific assertions</h3>
+
+            <ul>
+              <li><code>assertTrue</code></li>
+              <li><code>assertFalse</code></li>
+              <li><code>assertEqual</code></li>
+              <li><code>assertNotEqual</code></li>
+              <li><code>assertIn</code></li>
+              <li><code>assertNotIn</code></li>
+              <li>etc.</li>
+            </ul>
+
+            <aside class="notes">Custom assertion failure messages.</aside>
           </section>
 
           <section>
@@ -206,11 +215,11 @@ if __name__ == '__main__':
           <section>
             <h3><code>assert</code> everywhere !</h3>
             <p>
-              Don't worry about performance, assertions can be skipped with the
-              <code>-O</code> option.
+              Don't worry about performance, when needed
+              assertions can be skipped with the <code>-O</code> option.
             </p>
             <pre><code>
-$ python -O check_suite.py
+$ python -O mad_science.py
             </code></pre>
           </section>
 
@@ -226,10 +235,200 @@ $ python -O check_suite.py
             </ul>
           </section>
 
+          <section>
+            <h3>An example from <code>galpak</code></h3>
+            <pre><code>
+class MathUtilsTest(unittest.TestCase):
+
+    def test_safe_exp(self):
+
+        a = safe_exp(-1e100000000000000000)
+        self.assertEquals(a, 0)
+
+        a = safe_exp(-3950.)
+        self.assertEquals(a, 0)
+
+        a = safe_exp(1e1000000000000000000)
+        self.assertEquals(a, float('inf'))
+
+        a = safe_exp(3950.)
+        self.assertEquals(a, float('inf'))
+            </code></pre>
+          </section>
+
+          <section>
+            <h3>Tests are code too</h3>
+            <pre><code>
+class MathUtilsTest(unittest.TestCase):
+
+    def test_safe_exp(self):
+
+        assertions = [
+            # (a, b) such as safe_exp(a) == b
+            (-1e100000000000000000, 0),
+            (-3950, 0),
+            (3950, float('inf')),
+            (1e100000000000000000, float('inf'),
+            # etc.
+        ]
+
+        for (a, b) in assertions:
+            self.assertEquals(safe_exp(a), b,
+                "safe_exp(%s) should be equal to %s." % (a, b)
+            )
+
+            </code></pre>
+          </section>
+
+          <section>
+            <h3>Conclusion</h3>
+
+            <p>
+              Tested code is easier to <em>refactor</em> hence easier to <em>optimize</em>.
+            </p>
+
+            <p class="fragment">
+              Which brings us to the next part...
+            </p>
+
+            <aside class="notes">Because the implementation is much more flexible than the specifications.</aside>
+          </section>
+
         </section>
 
 
+        <!-- 3. OPTIMIZE ------------------------------------------------------>
 
+        <section data-transition="convex">
+
+          <section>
+            <h2>3. Optimize your code</h2>
+
+            <p>
+              No, there's no <em>magic</em> solution.
+            </p>
+
+            <img src="img/code-wizard.png" alt="Code wizard" />
+          </section>
+
+          <section>
+            <h3>line_profiler</h3>
+
+            <p>
+              Helps you identify <em>what</em> needs to be optimized.
+            </p>
+
+            <pre><code>sudo pip install line_profiler</code></pre>
+          </section>
+
+          <section>
+            <h3>benchmark</h3>
+
+            <p>
+              Quickly benchmark bits of code against one another.
+            </p>
+
+            <pre><code>sudo pip install benchmark</code></pre>
+          </section>
+
+          <section>
+            <p>
+              Which one is best ?
+            </p>
+            <ul>
+              <li><code>a * a * a</code></li>
+              <li><code>a ** 3</code></li>
+              <li><code>numpy.power(a, 3)</code></li>
+            </ul>
+          </section>
+
+          <section>
+            <pre><code>
+import benchmark
+import numpy as np
+
+class BenchmarkPowerOfThree(benchmark.Benchmark):
+
+    each = 10000  # configure number of runs
+
+    def setUp(self):
+        # Can also specify tearDown, eachSetUp, and eachTearDown
+        self.a = np.random.rand(32, 32, 32)
+
+    def test_explicit_multiplication(self):
+        b = self.a * self.a * self.a
+
+    def test_double_asterisks(self):
+        b = self.a ** 3
+
+    def test_numpy_power(self):
+        b = np.power(self.a, 3)
+
+if __name__ == '__main__':
+    benchmark.main(format="markdown", numberFormat="%.4g")
+            </code></pre>
+          </section>
+
+          <section data-background="#242" data-background-transition="zoom">
+            <p>
+              Explicit multiplication is almost <strong class="fragment highlight-red">15</strong> times faster !
+            </p>
+
+            <pre>
+
+               name | rank |      mean |        sd | timesBaseline
+  ------------------|------|-----------|-----------|--------------
+     multiplication |    1 | 0.0002208 | 4.511e-05 |           1.0
+        numpy power |    2 |  0.003243 | 0.0002166 | <b>14.6868697001</b>
+   double asterisks |    3 |  0.003244 | 0.0002177 |  <b>14.692235388</b>
+            </pre>
+          </section>
+
+          <section>
+            <h3><a href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.nan_to_num.html">numpy.nan_to_num()</a></h3>
+            <pre><code>
+import numpy as np
+import benchmark
+
+class BenchmarkNumpyNanToNum(benchmark.Benchmark):
+
+    each = 10000  # number of runs
+
+    def eachSetUp(self):  # on each, because a is mutated
+        self.a = np.random.rand(32, 32, 32)  # make a random array
+        nans = np.random.rand(32, 32, 32)
+        self.a[nans > 0.618] = float('NaN')  # put some NaNs
+
+    def test_nan_to_num(self):
+        self.a = np.nan_to_num(self.a)
+
+    def test_key_mapping(self):
+        self.a[np.isnan(self.a)] = 0
+
+if __name__ == '__main__':
+    benchmark.main(format="markdown", numberFormat="%.4g")
+            </code></pre>
+          </section>
+
+          <section data-background="#242" data-background-transition="zoom">
+            <p>
+              Annnnnnd... key mapping is <strong>2</strong> times faster !
+            </p>
+
+            <pre>
+
+            name | rank |      mean |        sd | timesBaseline
+     ------------|------|-----------|-----------|--------------
+     key mapping |    1 | 0.0003145 | 5.102e-05 |           1.0
+      nan to num |    2 | 0.0006489 | 0.0003646 | <b>2.06350907177</b>
+            </pre>
+
+            <p>
+              It's about 5 times faster when there are very few <code>NaN</code>s.
+            </p>
+          </section>
+
+        </section>
 
 
 
@@ -501,12 +700,6 @@ function linkify( selector ) {
 				</section>
 
 				<section>
-					<h2>Export to PDF</h2>
-					<p>Presentations can be <a href="https://github.com/hakimel/reveal.js#pdf-export">exported to PDF</a>, here's an example:</p>
-					<iframe src="//www.slideshare.net/slideshow/embed_code/42840540" width="445" height="355" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:3px solid #666; margin-bottom:5px; max-width: 100%;" allowfullscreen> </iframe>
-				</section>
-
-				<section>
 					<h2>Global State</h2>
 					<p>
 						Set <code>data-state="something"</code> on a slide and <code>"something"</code>
@@ -545,16 +738,7 @@ Reveal.addEventListener( 'customevent', function() {
 					</ul>
 				</section>
 
-				<section style="text-align: left;">
-					<h1>THE END</h1>
-					<p>
-						- <a href="http://slides.com">Try the online editor</a> <br>
-						- <a href="https://github.com/hakimel/reveal.js">Source code &amp; documentation</a>
-					</p>
-				</section>
-
 			</div>
-
 		</div>
 
 		<script src="lib/js/head.min.js"></script>
