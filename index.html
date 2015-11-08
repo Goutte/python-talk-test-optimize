@@ -242,13 +242,13 @@ class MathUtilsTest(unittest.TestCase):
 
     def test_safe_exp(self):
 
-        a = safe_exp(-1e100000000000000000)
+        a = safe_exp(-1e100)
         self.assertEquals(a, 0)
 
         a = safe_exp(-3950.)
         self.assertEquals(a, 0)
 
-        a = safe_exp(1e1000000000000000000)
+        a = safe_exp(1e100)
         self.assertEquals(a, float('inf'))
 
         a = safe_exp(3950.)
@@ -265,10 +265,11 @@ class MathUtilsTest(unittest.TestCase):
 
         assertions = [
             # (a, b) such as safe_exp(a) == b
-            (-1e100000000000000000, 0),
-            (-3950, 0),
-            (3950, float('inf')),
-            (1e100000000000000000, float('inf'),
+            (-1e100,            0),
+            ( -3950,            0),
+            (     0,            1),
+            (  3950, float('inf')),  # OverflowError with math.exp
+            ( 1e100, float('inf')),  # OverflowError with math.exp
             # etc.
         ]
 
@@ -312,23 +313,13 @@ class MathUtilsTest(unittest.TestCase):
           </section>
 
           <section>
-            <h3>line_profiler</h3>
-
-            <p>
-              Helps you identify <em>what</em> needs to be optimized.
-            </p>
-
-            <pre><code>sudo pip install line_profiler</code></pre>
-          </section>
-
-          <section>
             <h3>benchmark</h3>
 
             <p>
               Quickly benchmark bits of code against one another.
             </p>
 
-            <pre><code>sudo pip install benchmark</code></pre>
+            <pre><code>$ sudo pip install benchmark</code></pre>
           </section>
 
           <section>
@@ -385,7 +376,22 @@ if __name__ == '__main__':
           </section>
 
           <section>
-            <h3><a href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.nan_to_num.html">numpy.nan_to_num()</a></h3>
+            <h4>Another example : <a href="http://docs.scipy.org/doc/numpy/reference/generated/numpy.nan_to_num.html">numpy.nan_to_num()</a></h4>
+
+            <pre><code>
+# Using numpy's utility
+a = numpy.nan_to_num(a)
+
+# Key mapping ourselves
+a[numpy.isnan(a)] = 0
+            </code></pre>
+
+            <p>
+              Setting <code>NaN</code>s to zero is a very common task.
+            </p>
+          </section>
+
+          <section>
             <pre><code>
 import numpy as np
 import benchmark
@@ -410,6 +416,15 @@ if __name__ == '__main__':
             </code></pre>
           </section>
 
+          <section>
+            <h4>Care to guess which is faster ?</h4>
+
+            <p class="fragment">
+              The correct answer is :<br/>
+              <strong>don't guess</strong>...
+            </p>
+          </section>
+
           <section data-background="#242" data-background-transition="zoom">
             <p>
               Annnnnnd... key mapping is <strong>2</strong> times faster !
@@ -428,9 +443,244 @@ if __name__ == '__main__':
             </p>
           </section>
 
+          <section>
+            <p>Don't guess.</p>
+            <p class="fragment grow highlight-green">BENCHMARK !</p>
+          </section>
+
+          <section>
+            <h3>line_profiler</h3>
+
+            <p>
+              Helps you identify <em>what</em> needs to be optimized.
+            </p>
+
+            <pre><code>$ sudo pip install line_profiler</code></pre>
+          </section>
+
+          <section>
+            <h4>Example : coordinates conversion</h4>
+
+            <pre><code>
+from astropy.coordinates import SkyCoord
+from astropy.coordinates.builtin_frames.fk4 import FK4
+from astropy.coordinates.builtin_frames.galactic import Galactic
+
+def convert_coordinates(ras, decs):
+    lats = []
+    lngs = []
+    for i in range(len(ras)):
+        ra = ras[i]
+        dec = decs[i]
+        s = SkyCoord(ra=ra, dec=dec, frame=FK4)
+        s = s.transform_to(Galactic)
+        lats.append(s.b)
+        lngs.append(s.l)
+    other_expensive_operation(lats, lngs)
+    return lats, lngs
+            </code></pre>
+          </section>
+
+          <section>
+            <pre>
+
+   Total time: 108.871 s
+
+       Time  Time%  Line Contents
+   ==============================
+                    def convert_coordinates(ras, decs):
+          1    0.0      lats = []
+          1    0.0      lngs = []
+       1499    0.0      for i in range(len(ras)):
+        902    0.0          ra = ras[i]
+        691    0.0          dec = decs[i]
+   11614188   10.7          s = SkyCoord(ra=ra, dec=dec, frame=FK4)
+   79258112   72.8          s = s.transform_to(Galactic)
+    5015262    4.6          lats.append(s.b)
+    2970300    2.7          lngs.append(s.l)
+   10010105    9.2      other_expensive_operation(lats, lngs)
+          5    0.0      return lats, lngs
+
+            </pre>
+          </section>
+
+          <section>
+            <h4>Vectorize whenever you can</h4>
+
+            <pre><code>
+from astropy.coordinates import SkyCoord
+from astropy.coordinates.builtin_frames.fk4 import FK4
+from astropy.coordinates.builtin_frames.galactic import Galactic
+
+def convert_coordinates(ras, decs):
+    s = SkyCoord(ra=ras, dec=decs, frame=FK4)
+    s = s.transform_to(Galactic)
+    lats = s.b
+    lngs = s.l
+    other_expensive_operation(lats, lngs)
+    return lats, lngs
+            </code></pre>
+          </section>
+
+          <section>
+            <pre>
+
+   Total time: 11.52 s
+
+       Time  Time%  Line Contents
+   ==============================
+                    def convert_coordinates(ras, decs):
+    1366188   11.9      s = SkyCoord(ra=ras, dec=decs, frame=FK4)
+     134916    1.2      s = s.transform_to(Galactic)
+      11923    0.1      lats = s.b
+       6794    0.1      lngs = s.l
+   10000190   86.8      other_expensive_operation(lats, lngs)
+          4    0.0      return lats, lngs
+            </pre>
+          </section>
+
+          <section>
+            <h3>Usage</h3>
+
+            <p>
+              Annotate your function with <code>@profile</code>, and run :
+            </p>
+
+            <pre><code>$ kernprof -lv mad_science.py</code></pre>
+
+            <p>
+              See <a href="https://github.com/rkern/line_profiler">the documentation</a>.
+            </p>
+          </section>
+
+          <section>
+            <h3>Conclusion</h3>
+
+            <p>
+              Benchmarking is <em>easy</em>.
+            </p>
+
+            <p class="fragment">
+              Also, it teaches you a lot of things !
+            </p>
+          </section>
+
         </section>
 
 
+        <!-- 4. TIPS ---------------------------------------------------------->
+
+        <section data-transition="convex">
+
+          <section>
+            <h2>4. Tips</h2>
+
+            <p>
+              Tricks I learned along the way.
+            </p>
+
+            <img class="clipped" src="img/science.gif" alt="Science !"/>
+          </section>
+
+          <section>
+            <h3>Generators</h3>
+
+            <pre><code>
+# Define a generator
+def masked_pixels(x_max, y_max, mask):
+    for x in range(x_max):
+        for y in range(y_max):
+            if not mask[x, y]:
+                yield x, y
+
+# Then you can do
+for x, y in masked_pixels(x_max, y_max, mask)
+    # ...
+            </code></pre>
+
+            <p>
+              Use <code>yield</code> instead of <code>return</code>.
+            </p>
+          </section>
+
+          <section>
+            <h3>Python 2 <code>xrange</code></h3>
+
+            <p>
+              Faster, more memory efficient.
+            </p>
+
+            <pre><code>
+>>> %timeit -n 10  range(1000000)
+10 loops, best of 3: 23.3 ms per loop
+
+>>> %timeit -n 10 xrange(1000000)
+10 loops, best of 3:  0.6 ms per loop
+            </code></pre>
+
+            <p>
+              Warning: Python 3 only has <code>range</code>.
+            </p>
+          </section>
+
+          <section>
+            <h3>List comprehensions</h3>
+
+            <pre><code>
+a = [0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233]
+b = [n**2 for n in a]
+# [0, 1, 1, 4, 9, 25, 64, 169, 441, 1156, 3025, 7921, 20736, 54289]
+            </code></pre>
+          </section>
+
+          <section>
+            <h3>Numpy is <em>very</em> fast</h3>
+
+            <pre><code>
+import numpy as np
+
+a = np.array([0, 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233])
+b = a ** 2
+            </code></pre>
+
+            <p>
+              Vectorized calculus is usually faster,
+              <br/>
+              especially with bigger lists.
+            </p>
+          </section>
+
+          <section>
+            <h3>Generator comprehensions</h3>
+
+            <p>
+              When lists become too big.
+            </p>
+
+            <pre><code class="python">
+# Count the number of characters per line. Yields a generator.
+counts = (len(line.strip()) for line in open('my_file.txt'))
+
+for c in counts:
+    print c
+
+# BUT !
+counts[1]  # Won't work, it's a generator !
+            </code></pre>
+          </section>
+
+        </section>
+
+
+        <!-- Q&A -------------------------------------------------------------->
+
+        <section data-transition="convex">
+
+          <section>
+            <h2>Questions?</h2>
+          </section>
+
+        </section>
 
 				<!-- Example of nested vertical slides -->
 				<section>
