@@ -2,6 +2,8 @@
 
 A rapid talk about testing and optimizing python scripts, for scientists.
 
+The online version can be found at http://antoine.goutenoir.com/talks/python-ktafe-test-optimize
+
 Made with the awesome `reveal.js`, see below.
 
 
